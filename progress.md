@@ -7,11 +7,15 @@ concrete basis for the number (e.g. "9/12 exercises in this lab done").
 
 ## Topics studied
 
-_None yet — repository just scaffolded._
+- SQL joins and aggregation — in progress. Stated starting point: comfortable
+  with single-table SQL, joins/aggregation previously handled by
+  JPA/Hibernate rather than hand-written.
 
 ## Labs completed
 
-_None yet._
+_None finished yet. `labs/01-sql/01-joins-and-aggregation/` is set up
+(schema + seed verified against a real Postgres instance) and waiting on
+the user's attempt._
 
 ## Topics I understand (with evidence)
 
@@ -36,5 +40,7 @@ Starting point: junior/mid backend level, SQL fundamentals.
 
 ## Recommended next step
 
-Start with `curriculum/01-sql.md` and the first SQL lab. Waiting on the user
-to choose a starting exercise.
+Attempt the 5 problems in
+`labs/01-sql/01-joins-and-aggregation/exercise.md`, recording queries and
+actual output in `my-attempt.md`. Waiting on the user's attempt before any
+review happens.
