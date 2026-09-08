@@ -9,4 +9,4 @@ were independently derived.
 
 ---
 
-_No entries yet._
+Oracle VARCHAR2 null == empty string

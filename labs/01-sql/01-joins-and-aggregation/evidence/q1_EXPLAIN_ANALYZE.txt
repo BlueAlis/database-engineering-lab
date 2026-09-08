@@ -1,0 +1,16 @@
+|QUERY PLAN                                                                                                       |
+|-----------------------------------------------------------------------------------------------------------------|
+|Sort  (cost=43.66..43.67 rows=1 width=40) (actual time=0.026..0.027 rows=3 loops=1)                              |
+|  Sort Key: o.order_date DESC                                                                                    |
+|  Sort Method: quicksort  Memory: 25kB                                                                           |
+|  ->  Nested Loop  (cost=0.00..43.65 rows=1 width=40) (actual time=0.015..0.018 rows=3 loops=1)                  |
+|        Join Filter: (c.id = o.customer_id)                                                                      |
+|        Rows Removed by Join Filter: 16                                                                          |
+|        ->  Seq Scan on customers c  (cost=0.00..19.45 rows=1 width=36) (actual time=0.011..0.012 rows=1 loops=1)|
+|              Filter: ((city = 'Bangkok'::text) AND (customer_type = 'contractor'::text))                        |
+|              Rows Removed by Filter: 9                                                                          |
+|        ->  Seq Scan on orders o  (cost=0.00..24.12 rows=6 width=12) (actual time=0.003..0.004 rows=19 loops=1)  |
+|              Filter: (status = 'completed'::text)                                                               |
+|              Rows Removed by Filter: 1                                                                          |
+|Planning Time: 0.112 ms                                                                                          |
+|Execution Time: 0.061 ms                                                                                         |
