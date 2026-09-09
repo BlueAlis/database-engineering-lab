@@ -1,0 +1,82 @@
+-- Lab 01-sql / 01-joins-and-aggregation
+-- Synthetic data. Small on purpose - fundamentals lab, not a scale lab.
+
+INSERT INTO customers (id, name, city, customer_type) VALUES
+    (1,  'Somchai Construction Co.',        'Bangkok',    'contractor'),
+    (2,  'Malee Home Improvement',          'Bangkok',    'retail'),
+    (3,  'Thai Building Supply Partners',   'Nonthaburi', 'contractor'),
+    (4,  'Piti Renovation',                 'Bangkok',    'retail'),
+    (5,  'Northern Concrete Works',         'Chiang Mai', 'contractor'),
+    (6,  'Sunshine Hardware',               'Chiang Mai', 'retail'),
+    (7,  'Delta Infrastructure',            'Nonthaburi', 'contractor'),
+    (8,  'Ban Suan Villas',                 'Bangkok',    'retail'),
+    (9,  'Apex Builders',                   'Chonburi',   'contractor'),
+    (10, 'Green Roof Renovations',          'Chonburi',   'retail');
+
+INSERT INTO products (id, sku, name, category, unit_price, unit) VALUES
+    (1,  'CEM-001', 'Portland Cement 50kg',    'Cement',            180.00, 'bag'),
+    (2,  'CEM-002', 'Quick-Set Cement 25kg',   'Cement',            120.00, 'bag'),
+    (3,  'STL-001', 'Rebar 12mm 6m',           'Rebar & Steel',     250.00, 'piece'),
+    (4,  'STL-002', 'Rebar 10mm 6m',           'Rebar & Steel',     190.00, 'piece'),
+    (5,  'BRK-001', 'Red Clay Brick',          'Bricks & Blocks',     8.50, 'piece'),
+    (6,  'BRK-002', 'Concrete Block 20cm',     'Bricks & Blocks',    22.00, 'piece'),
+    (7,  'SND-001', 'River Sand',              'Sand & Aggregate',  450.00, 'cubic_meter'),
+    (8,  'AGG-001', 'Crushed Gravel',          'Sand & Aggregate',  500.00, 'cubic_meter'),
+    (9,  'PNT-001', 'Exterior Paint 20L',      'Paint & Finishing',1450.00, 'can'),
+    (10, 'PNT-002', 'Interior Paint 20L',      'Paint & Finishing',1200.00, 'can'),
+    (11, 'TLS-001', 'Cordless Drill',          'Tools & Hardware', 2200.00, 'unit'),
+    (12, 'PLM-001', 'PVC Pipe 4in 6m',         'Plumbing',          320.00, 'piece');
+
+INSERT INTO orders (id, customer_id, order_date, status) VALUES
+    (1,  1, '2026-01-05', 'completed'),
+    (2,  1, '2026-02-10', 'completed'),
+    (3,  2, '2026-01-12', 'completed'),
+    (4,  3, '2026-01-20', 'completed'),
+    (5,  3, '2026-03-02', 'completed'),
+    (6,  4, '2026-02-01', 'completed'),
+    (7,  5, '2026-01-15', 'completed'),
+    (8,  5, '2026-02-20', 'cancelled'),
+    (9,  6, '2026-01-08', 'completed'),
+    (10, 7, '2026-01-25', 'completed'),
+    (11, 7, '2026-03-10', 'completed'),
+    (12, 8, '2026-02-14', 'completed'),
+    (13, 9, '2026-01-30', 'completed'),
+    (14, 9, '2026-02-28', 'completed'),
+    (15, 1, '2026-03-15', 'completed'),
+    (16, 2, '2026-03-05', 'completed'),
+    (17, 3, '2026-02-18', 'completed'),
+    (18, 6, '2026-03-01', 'completed'),
+    (19, 7, '2026-02-05', 'completed'),
+    (20, 8, '2026-03-20', 'completed');
+
+INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
+    (1,  1,  10,  180.00),
+    (1,  3,  20,  250.00),
+    (2,  5,  500,   8.50),
+    (2,  7,  2,   450.00),
+    (3,  9,  3,  1450.00),
+    (4,  1,  50,  180.00),
+    (4,  4,  30,  190.00),
+    (5,  11, 2,  2200.00),
+    (6,  10, 4,  1200.00),
+    (6,  9,  2,  1450.00),
+    (7,  7,  5,   450.00),
+    (7,  8,  5,   500.00),
+    (8,  1,  100, 180.00),  -- belongs to the cancelled order (8)
+    (9,  12, 10,  320.00),
+    (10, 3,  15,  250.00),
+    (10, 4,  15,  190.00),
+    (11, 6,  200,  22.00),
+    (12, 9,  1,  1450.00),
+    (12, 10, 1,  1200.00),
+    (13, 1,  80,  180.00),
+    (13, 3,  40,  250.00),
+    (13, 7,  8,   450.00),
+    (14, 11, 1,  2200.00),
+    (15, 2,  20,  120.00),
+    (16, 5,  300,   8.50),
+    (17, 8,  6,   500.00),
+    (18, 12, 5,   320.00),
+    (18, 6,  100,  22.00),
+    (19, 9,  2,  1450.00),
+    (20, 3,  10,  250.00);
