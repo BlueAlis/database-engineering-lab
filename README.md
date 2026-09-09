@@ -40,8 +40,9 @@ database-engineering-lab/
 
 Within a lab, files are split by who wrote them:
 
-- **My work** (`my-attempt.md`, `my-revision.md`, `experiment.md`,
-  `reflection.md`) — my own reasoning and observations, unedited by AI.
+- **My work** (`my-work.md` — attempt/revision/experiment as append-only
+  sections — plus `reflection.md`) — my own reasoning and observations,
+  unedited by AI.
 - **AI assistance** (`exercise.md`, `ai-review.md`, `hints.md`,
   `reference-solution.md`) — clearly labeled help, reviews, and hints.
 

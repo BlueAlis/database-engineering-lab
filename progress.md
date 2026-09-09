@@ -21,18 +21,27 @@ concrete basis for the number (e.g. "9/12 exercises in this lab done").
 
 ## Labs completed
 
-`labs/01-sql/01-joins-and-aggregation/` — attempt done (`my-attempt.md`),
-reviewed (`ai-review.md`). Still open: user reflection
-(`reflection.md`) not yet written.
+`labs/01-sql/01-joins-and-aggregation/` — attempt done (`my-work.md` §
+Attempt), reviewed (`ai-review.md`). Raw EXPLAIN ANALYZE for problems 1-2
+captured in `evidence/`, no experiment write-up yet. Still open: revision,
+experiment write-up, and user reflection (`reflection.md`) not yet written.
 
 `labs/01-sql/02-subqueries-and-exists-vs-in-vs-join/` — attempt done
-(`my-attempt.md`, 5/5 problems), reviewed (`ai-review.md`, no correctness
-issues found). `my-revision.md` deliberately skipped — the two points
-`ai-review.md` flagged (redundant category-average subquery evaluation in
-problem 3, `INNER JOIN` silently dropping an all-zero-spend city in problem
-5) are query-cost/edge-case notes, not bugs, and the user judged a revision
-unnecessary rather than being told to skip it. `reflection.md` not yet
-written.
+(`my-work.md` § Attempt, 5/5 problems), reviewed (`ai-review.md`, no
+correctness issues found). A revision pass on problem 3 (redundant
+category-average subquery) and problem 5 (`INNER JOIN` silently dropping an
+all-zero-spend city) was started in chat and then deliberately deleted by
+the user before saving — not carried into `my-work.md`. Real experiment run
+on problem 1 (JOIN+DISTINCT vs IN vs EXISTS), both against the real seed
+data and against an isolated 5,000-customer/150,000-order synthetic dataset
+(`bench_02` schema, dropped after use) — raw plans in `evidence/`, showing
+the planner uniquifies before joining for IN/EXISTS but after joining for
+JOIN+DISTINCT at scale. Experiment write-up (§ Experiment in `my-work.md`)
+and `reflection.md` not yet written.
+
+Repo structure note: `my-attempt.md` / `my-revision.md` / `experiment.md`
+were merged into a single `my-work.md` per lab (append-only sections) on
+2026-09-09, at the user's request — see `CLAUDE.md`.
 
 ## Topics I understand (with evidence)
 

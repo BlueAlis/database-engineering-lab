@@ -34,14 +34,15 @@ Connect however you like: `docker exec -it dbeng-lab-postgres psql -U lab -d dbe
 
 Same as lab 01. See [exercise.md](exercise.md). For each problem:
 
-1. Write your query in `my-attempt.md` (create it yourself). Include the
-   query and, once you run it, what it actually returned.
+1. Write your query in `my-work.md` under `## Attempt` (create it yourself).
+   Include the query and, once you run it, what it actually returned.
 2. Don't ask for the reference solution before attempting it.
 3. When you've attempted all of them (or want a check-in), say so and I'll
-   review `my-attempt.md`.
+   review `my-work.md`.
 
 ## Files
 
 - `exercise.md` — AI-authored, the problems
-- `my-attempt.md` — **yours**, not created yet
+- `my-work.md` — **yours**, attempt/revision/experiment as append-only
+  sections
 - `ai-review.md` — created after your attempt

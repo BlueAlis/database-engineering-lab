@@ -1,0 +1,125 @@
+Problem 1 — JOIN+DISTINCT vs IN vs EXISTS
+Run against: bench_02 schema (synthetic, scaled-up, isolated from the real
+lab seed data in `public` — created for this experiment only, dropped
+afterward, not part of the repo's tracked dataset).
+
+Schema (subset of the real one, only what problem 1 needs):
+  customers(id, name, city, customer_type) — PK only
+  orders(id, customer_id FK, order_date, status) — PK only, no secondary index
+
+Dataset size: customers=5,000, orders=150,000
+  status breakdown: completed=90,147, cancelled=59,853
+Generation: SERIAL id + generate_series, city/customer_type/status assigned
+  via random(), order_date random within 2024. Not representative business
+  data — sized only to make the DISTINCT-dedup cost non-trivial to measure.
+Postgres version: postgres:16 (container dbeng-lab-postgres)
+
+=== (a) JOIN + DISTINCT ===
+
+select distinct c.name, c.city
+from customers c
+inner join orders o on c.id = o.customer_id
+where o.status = 'completed';
+
+ HashAggregate  (cost=3671.19..3721.19 rows=5000 width=22) (actual time=30.587..30.853 rows=5000 loops=1)
+   Group Key: c.name, c.city
+   Batches: 1  Memory Usage: 721kB
+   Buffers: shared hit=998
+   ->  Hash Join  (cost=154.50..3221.69 rows=89900 width=22) (actual time=0.962..18.707 rows=90147 loops=1)
+         Hash Cond: (o.customer_id = c.id)
+         Buffers: shared hit=998
+         ->  Seq Scan on orders o  (cost=0.00..2831.00 rows=89900 width=4) (actual time=0.006..9.256 rows=90147 loops=1)
+               Filter: (status = 'completed'::text)
+               Rows Removed by Filter: 59853
+               Buffers: shared hit=956
+         ->  Hash  (cost=92.00..92.00 rows=5000 width=26) (actual time=0.930..0.931 rows=5000 loops=1)
+               Buckets: 8192  Batches: 1  Memory Usage: 365kB
+               Buffers: shared hit=42
+               ->  Seq Scan on customers c  (cost=0.00..92.00 rows=5000 width=26) (actual time=0.002..0.274 rows=5000 loops=1)
+                     Buffers: shared hit=42
+ Planning:
+   Buffers: shared hit=197
+ Planning Time: 0.363 ms
+ Execution Time: 31.187 ms
+
+=== (b) IN ===
+
+select c.name, c.city
+from customers c
+where c.id in (
+	select o.customer_id from orders o
+	where status = 'completed'
+);
+
+ Hash Join  (cost=3168.25..3329.00 rows=5000 width=22) (actual time=17.140..17.981 rows=5000 loops=1)
+   Hash Cond: (c.id = o.customer_id)
+   Buffers: shared hit=998
+   ->  Seq Scan on customers c  (cost=0.00..92.00 rows=5000 width=26) (actual time=0.003..0.266 rows=5000 loops=1)
+         Buffers: shared hit=42
+   ->  Hash  (cost=3105.75..3105.75 rows=5000 width=4) (actual time=17.105..17.106 rows=5000 loops=1)
+         Buckets: 8192  Batches: 1  Memory Usage: 240kB
+         Buffers: shared hit=956
+         ->  HashAggregate  (cost=3055.75..3105.75 rows=5000 width=4) (actual time=16.515..16.755 rows=5000 loops=1)
+               Group Key: o.customer_id
+               Batches: 1  Memory Usage: 465kB
+               Buffers: shared hit=956
+               ->  Seq Scan on orders o  (cost=0.00..2831.00 rows=89900 width=4) (actual time=0.004..9.484 rows=90147 loops=1)
+                     Filter: (status = 'completed'::text)
+                     Rows Removed by Filter: 59853
+                     Buffers: shared hit=956
+ Planning:
+   Buffers: shared hit=195
+ Planning Time: 0.366 ms
+ Execution Time: 18.225 ms
+
+=== (c) EXISTS ===
+
+select c.name, c.city
+from customers c
+where exists(
+	select 1
+	from orders o
+	where o.status = 'completed'
+	and o.customer_id = c.id
+);
+
+ Hash Join  (cost=3168.25..3329.00 rows=5000 width=22) (actual time=17.433..18.129 rows=5000 loops=1)
+   Hash Cond: (c.id = o.customer_id)
+   Buffers: shared hit=998
+   ->  Seq Scan on customers c  (cost=0.00..92.00 rows=5000 width=26) (actual time=0.003..0.208 rows=5000 loops=1)
+         Buffers: shared hit=42
+   ->  Hash  (cost=3105.75..3105.75 rows=5000 width=4) (actual time=17.401..17.401 rows=5000 loops=1)
+         Buckets: 8192  Batches: 1  Memory Usage: 240kB
+         Buffers: shared hit=956
+         ->  HashAggregate  (cost=3055.75..3105.75 rows=5000 width=4) (actual time=16.812..17.051 rows=5000 loops=1)
+               Group Key: o.customer_id
+               Batches: 1  Memory Usage: 465kB
+               Buffers: shared hit=956
+               ->  Seq Scan on orders o  (cost=0.00..2831.00 rows=89900 width=4) (actual time=0.005..9.627 rows=90147 loops=1)
+                     Filter: (status = 'completed'::text)
+                     Rows Removed by Filter: 59853
+                     Buffers: shared hit=956
+ Planning:
+   Buffers: shared hit=195
+ Planning Time: 0.409 ms
+ Execution Time: 18.373 ms
+
+=== Observation (raw, not yet a conclusion) ===
+
+At this scale the planner's strategy differs from the small-seed run: for
+(b)/(c) it deduplicates orders.customer_id FIRST via HashAggregate
+(90,147 rows -> 5,000 groups, narrow integer column), THEN hash-joins
+against customers. For (a), it hash-joins FIRST (producing the full
+90,147-row join against the wider name+city payload), THEN deduplicates
+via HashAggregate on the wider result. That ordering — dedupe-before-widen
+vs dedupe-after-widen — is the concrete reason (a) costs ~31ms vs ~18ms for
+(b)/(c), not "DISTINCT is just slow" in the abstract.
+
+At this row count (150K) the ~13ms gap is backed by real measured work
+(Seq Scans reading 90K+ rows, HashAggregate over that many rows), unlike
+the sub-millisecond seed-data run above where the gap was noise.
+
+bench_02 schema was dropped after this run — not part of the tracked
+dataset, not reproducible by re-running setup/seed.sql. If this needs to be
+re-verified later, regenerate with the same generate_series approach
+(5,000 customers / 150,000 orders, ~60% completed).

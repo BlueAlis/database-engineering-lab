@@ -32,7 +32,7 @@ through, since nothing in this schema can actually trigger it
 (`order_items.product_id` is `NOT NULL`): if the subquery inside a
 `NOT IN (...)` can return so much as one `NULL` among its rows, what
 happens to the whole `NOT IN` result? Would `NOT EXISTS` have the same
-problem? Answer in `my-attempt.md` — this part is **theoretical / not
+problem? Answer in `my-work.md` under `## Attempt` — this part is **theoretical / not
 executed**, since you can't produce a NULL in a `NOT NULL` column to test
 it against real data here.
 

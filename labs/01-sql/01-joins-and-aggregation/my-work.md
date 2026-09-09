@@ -1,6 +1,16 @@
-# My Attempt — Joins and Aggregation
+# My Work — Joins and Aggregation
 
-## 1. Warm-up filter + join
+<!--
+Append-only: Attempt / Revision / Experiment sections. Once a section is
+written, it is never edited — only new sections get added below it.
+This file was merged from the old my-attempt.md / my-revision.md /
+experiment.md split on 2026-09-09; content below is unchanged from the
+original my-attempt.md.
+-->
+
+## Attempt
+
+### 1. Warm-up filter + join
 
 Query:
 ```sql
@@ -24,7 +34,7 @@ Somchai Construction Co.,1,2026-01-05
 
 Notes: ควรใช้ inner join แทนการใช้ left join ให้ตรงกับการใช้งานจริงที่ต้องการแค่ข้อมูลบางอย่างจากทั้ง 2 table
 
-## 2. Revenue per customer
+### 2. Revenue per customer
 
 Query:
 ```sql
@@ -55,7 +65,7 @@ Output:
 
 Notes: ใช้ on status แทน where กัน customer ที่ไม่มี order หลุดไป
 
-## 3. Products ordered by many distinct customers
+### 3. Products ordered by many distinct customers
 
 Query:
 ```sql
@@ -94,7 +104,7 @@ answer : แตกต่างกันเพราะ การนับจำ�
 
 district c.id , group by p.id เพราะ เป็น primary key ไม่มีโอกาสซ้ำแบบการใช้ name
 
-## 4. Customers with no orders at all
+### 4. Customers with no orders at all
 
 Query:
 ```sql
@@ -117,7 +127,8 @@ Notes:
 
 answer: ต่างกันจากข้อ 2 อาจมีลูกค้าสั่ง order มาแต่เกิด cancle หรือกรณีอื่นๆทำให้ไม่เกิดเป็นรายได้จริงๆ
 แต่ข้อ 4 คือไม่เคยสั่ง order เลยจริงๆ
-## 5. Top categories by revenue
+
+### 5. Top categories by revenue
 
 Query:
 ```sql
@@ -148,7 +159,8 @@ answer:
  แบบไม่แน่นอนเป็น undefined order ขึ้นอยู่กับการทำงานของ query execution ในตอนนั้น  
 วิธีแก้เพิ่ม tie-breaker column เพิ่ม เช่น  
 ORDER BY total_revenue DESC, category ASC
-## Optional stretch (largest category per customer)
+
+### Optional stretch (largest category per customer)
 
 Query:
 ```sql  
@@ -216,3 +228,12 @@ Notes:
 step 1: หา revenue ต่อ customer category  
 step 2: หาแถวที่ยอดสูงสุดของลูกค้าแต่ละคน  
 step 3: เอาผลที่ได้จาก step 2 ไป select ใหม่
+
+## Revision
+
+(not written yet)
+
+## Experiment
+
+Raw EXPLAIN ANALYZE output already captured in `evidence/` (q1, q2) from an
+earlier session. Write-up/conclusion in this section not written yet.

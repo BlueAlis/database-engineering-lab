@@ -6,7 +6,8 @@ the order — use that, not `products.unit_price`, when computing money
 values. `orders.status` can be `completed` or `cancelled`.
 
 Write one SQL query per problem. Run it against the loaded database and
-record both the query and its actual output in `my-attempt.md`.
+record both the query and its actual output in `my-work.md` under
+`## Attempt`.
 
 ## 1. Warm-up filter + join
 

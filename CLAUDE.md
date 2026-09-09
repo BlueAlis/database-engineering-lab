@@ -21,9 +21,12 @@ like a real person's messy, evolving learning process — including mistakes.
 
 Concretely, this means:
 
-- Never write `my-attempt.md`, `my-revision.md`, `reflection.md`, or any file
-  under a lab's "my work" umbrella. Those are written by the user, in their
-  own words, or not at all.
+- Never write `my-work.md`, `reflection.md`, or any file under a lab's "my
+  work" umbrella. Those are written by the user, in their own words, or not
+  at all. `my-work.md` holds the user's attempt, revision, and experiment
+  write-up as append-only sections (`## Attempt`, `## Revision`,
+  `## Experiment`) — once a section is written, never edit it; only add new
+  sections below it.
 - Never invent benchmark numbers, execution times, or `EXPLAIN ANALYZE`
   output. If a real experiment wasn't run, say so explicitly and mark
   anything hypothetical as **theoretical / not executed**.
@@ -104,10 +107,13 @@ labs/<topic>/<lab-name>/
 ├── README.md          what this lab is about
 ├── setup/             schema/seed scripts, dataset generators
 ├── exercise.md         (AI) the problem statement
-├── my-attempt.md        (USER) first attempt, unedited
-├── ai-review.md        (AI) review of the attempt
-├── my-revision.md       (USER) revised solution
-├── experiment.md        (USER, with AI help running it) real EXPLAIN ANALYZE etc.
+├── my-work.md           (USER) attempt, revision, and experiment write-up —
+│                        one file, append-only sections (## Attempt,
+│                        ## Revision, ## Experiment); a written section is
+│                        never edited, only added to below
+├── ai-review.md        (AI) review of the attempt, kept separate from
+│                        my-work.md so AI assistance never mixes into the
+│                        user's own file
 ├── evidence/             raw output, screenshots, plan dumps
 └── reflection.md         (USER) what they now understand
 ```
@@ -115,6 +121,13 @@ labs/<topic>/<lab-name>/
 Files marked (USER) contain the user's own words and must never be
 ghostwritten. Files marked (AI) are assistance and must read as assistance,
 not as the user's personal notes.
+
+`my-work.md` replaced the earlier three-file split (`my-attempt.md`,
+`my-revision.md`, `experiment.md`) at the user's request — the split caused
+too much tab-switching for their actual chat-first working style. The
+append-only-sections rule inside the single file exists specifically to
+preserve the original "never overwrite an attempt" guarantee that used to
+come from having separate files.
 
 ## Mistakes Are Evidence, Not Noise
 

@@ -1,0 +1,98 @@
+Problem 1 — JOIN+DISTINCT vs IN vs EXISTS
+Run against: public schema, real lab seed data (setup/schema.sql + setup/seed.sql)
+Dataset size: customers=10, orders=20, order_items=30, products=12
+Indexes present: primary keys only (no secondary indexes)
+Postgres version: postgres:16 (container dbeng-lab-postgres)
+
+=== (a) JOIN + DISTINCT ===
+
+select distinct c."name", c.city
+from customers c
+inner join orders o on c.id = o.customer_id
+where o.status = 'completed';
+
+ Unique  (cost=43.00..43.05 rows=6 width=64) (actual time=0.271..0.276 rows=9 loops=1)
+   Buffers: shared hit=5
+   ->  Sort  (cost=43.00..43.02 rows=6 width=64) (actual time=0.270..0.272 rows=19 loops=1)
+         Sort Key: c.name, c.city
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=5
+         ->  Hash Join  (cost=24.20..42.92 rows=6 width=64) (actual time=0.036..0.039 rows=19 loops=1)
+               Hash Cond: (c.id = o.customer_id)
+               Buffers: shared hit=2
+               ->  Seq Scan on customers c  (cost=0.00..16.30 rows=630 width=68) (actual time=0.004..0.004 rows=10 loops=1)
+                     Buffers: shared hit=1
+               ->  Hash  (cost=24.12..24.12 rows=6 width=4) (actual time=0.011..0.011 rows=19 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                     Buffers: shared hit=1
+                     ->  Seq Scan on orders o  (cost=0.00..24.12 rows=6 width=4) (actual time=0.005..0.006 rows=19 loops=1)
+                           Filter: (status = 'completed'::text)
+                           Rows Removed by Filter: 1
+                           Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=182
+ Planning Time: 0.725 ms
+ Execution Time: 0.709 ms
+
+=== (b) IN ===
+
+select c."name", c.city
+from customers c
+where c.id in (
+	select o.customer_id from orders o
+	where status = 'completed'
+);
+
+ Hash Semi Join  (cost=24.20..42.22 rows=6 width=64) (actual time=0.023..0.026 rows=9 loops=1)
+   Hash Cond: (c.id = o.customer_id)
+   Buffers: shared hit=2
+   ->  Seq Scan on customers c  (cost=0.00..16.30 rows=630 width=68) (actual time=0.004..0.005 rows=10 loops=1)
+         Buffers: shared hit=1
+   ->  Hash  (cost=24.12..24.12 rows=6 width=4) (actual time=0.009..0.010 rows=19 loops=1)
+         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+         Buffers: shared hit=1
+         ->  Seq Scan on orders o  (cost=0.00..24.12 rows=6 width=4) (actual time=0.004..0.006 rows=19 loops=1)
+               Filter: (status = 'completed'::text)
+               Rows Removed by Filter: 1
+               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=180
+ Planning Time: 0.674 ms
+ Execution Time: 0.055 ms
+
+=== (c) EXISTS ===
+
+select c."name", c.city
+from customers c
+where exists(
+	select 1
+	from orders o
+	where o.status = 'completed'
+	and o.customer_id = c.id
+);
+
+ Hash Semi Join  (cost=24.20..42.22 rows=6 width=64) (actual time=0.023..0.025 rows=9 loops=1)
+   Hash Cond: (c.id = o.customer_id)
+   Buffers: shared hit=2
+   ->  Seq Scan on customers c  (cost=0.00..16.30 rows=630 width=68) (actual time=0.003..0.004 rows=10 loops=1)
+         Buffers: shared hit=1
+   ->  Hash  (cost=24.12..24.12 rows=6 width=4) (actual time=0.009..0.009 rows=19 loops=1)
+         Buckets: 1024  Batches: 1  Memory Usage: 9kB
+         Buffers: shared hit=1
+         ->  Seq Scan on orders o  (cost=0.00..24.12 rows=6 width=4) (actual time=0.004..0.006 rows=19 loops=1)
+               Filter: (status = 'completed'::text)
+               Rows Removed by Filter: 1
+               Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=180
+ Planning Time: 0.299 ms
+ Execution Time: 0.052 ms
+
+=== Observation (raw, not yet a conclusion) ===
+
+At this dataset size (10 customers / 20 orders), IN and EXISTS produce the
+identical plan (Hash Semi Join, no separate dedup step). JOIN+DISTINCT adds
+an extra Sort+Unique on top of the same Hash Join. Timing differences here
+(0.7ms vs 0.05ms) are NOT statistically meaningful at this row count — see
+the bench_02 run below for a size where the timing gap is backed by real
+work rather than noise.

@@ -1,6 +1,19 @@
-# My Attempt — subqueries-and-exists-vs-in-vs-join
+# My Work — Subqueries and EXISTS vs IN vs JOIN
 
-## 1.Warm-up — three ways to ask the same question
+<!--
+Append-only: Attempt / Revision / Experiment sections. Once a section is
+written, it is never edited — only new sections get added below it.
+This file was merged from the old my-attempt.md / my-revision.md /
+experiment.md split on 2026-09-09; content below is unchanged from the
+original my-attempt.md. A my-revision.md was started and then deleted at
+the user's request before this merge (see ai-review.md for what it would
+have addressed: problem 3's redundant subquery evaluation, problem 5's
+INNER JOIN edge case) — nothing from it carried over here.
+-->
+
+## Attempt
+
+### 1.Warm-up — three ways to ask the same question
 Query:
 ```sql
 select distinct  c."name" ,c.city  
@@ -51,7 +64,8 @@ b ไม่ต้องการเพราะเป็นการวนเช
 c ไม่ต้องการเพราะมีการทำ correlation เช็ค ว่า order status complete นั้นเป็นของ customer นั้นจริงหรือไม่ ถ้าไม่มี correlation ก็จะได้ผลลัพธ์แบบ static คือขอแค่ order มี status complete ก็จะเห็นทุก user ดี
 
 ในเคสนี้ (การเช็ค) การใช้ exists ดีที่สุด เพราะไม่ต้องพึ่งการใช้ distinct , ถ้าเงื่อนไขที่ต้องการซับซ้อนขึ้นก็สามารถทำได้เลยโดยไม่กระทบ outer row count, performance ดีกว่าการใช้ join+distinct
-## 2. NOT EXISTS, and where NOT IN gets dangerous
+
+### 2. NOT EXISTS, and where NOT IN gets dangerous
 Query:
 ```sql
 select * 
@@ -79,7 +93,7 @@ problem?
 answer: จะไม่ได้ result เลย เพราะใช้ Three-Valued Logic (true,false,unknown) โดยที่ null จะได้เป็น unknown และ การใช้ not in ทุกเงื่อนไขต้องได้เป็น true ทั้งหมด
 ส่วนการใช้ not exists เป็นการเช็คว่ามีหรือไม่มี และไม่ใช่การเอาค่าใน subquery ไปเปรียบเทียบกับ outer query แบบ not in ทำให้ไม่เจอปัญหานี้
 
-## 3. Correlated subquery — priced above category average
+### 3. Correlated subquery — priced above category average
 Query:
 ```sql
 select p.name, p.category, p.unit_price,
@@ -109,11 +123,11 @@ Exterior Paint 20L,Paint & Finishing,1450.00,1325.0000000000000000
 ```
 
 Notes:  
-ควรใช้ CTE ในการทำ select category_avg ลดการคำนวณซ้ำลง  หนรือจะใช้ group by ในการหา avg category price แทนก็ได้
+ควรใช้ CTE ในการทำ select category_avg ลดการคำนวณซ้ำลง  หรือจะใช้ group by ในการหา avg category price แทนก็ได้
   
 ที่ต้องแยก alias (p ,p2) เพราะเป็นคนละ scope กัน
 
-## 4. Scalar subquery — above-average spenders
+### 4. Scalar subquery — above-average spenders
 Query:
 ```sql
 with total_spend as (
@@ -163,7 +177,7 @@ answer: หา total spend ต่อ customer ก่อนถึงจะเอ�
 ใช้ CTE เพราะไม่สามารถใช้ aggregate ซ้อนกันได้
 Scalar subquery = subquery ที่คืนค่าออกมาแค่ 1 แถว 1 column เท่านั้น
 
-## 5. Subquery in FROM — top spender per city
+### 5. Subquery in FROM — top spender per city
 
 Query:
 ```sql
@@ -195,3 +209,18 @@ Notes: there's more
 than one valid way to do the second part; whichever you pick, be ready to
 explain why it gets exactly one row per city even if there's a tie.  
 answer: ใช้ row_number() เพราะทุก row จะได้เลขต่างกัน เมื่อ where = 1 จะทำให้ได้ผลลัพธ์แค่ row เดียวต่อ city
+
+## Revision
+
+(not written yet — a first pass on problems 3 and 5 was started in chat and
+then deliberately deleted before being saved to a file; see ai-review.md
+for what it would need to cover)
+
+## Experiment
+
+Problem 1 (JOIN+DISTINCT vs IN vs EXISTS) run for real against Postgres,
+twice — once on the real lab seed data, once on a scaled-up isolated
+dataset. Raw query/plan/observations in `evidence/q1_EXPLAIN_ANALYZE_seed.txt`
+and `evidence/q1_EXPLAIN_ANALYZE_bench_02.txt`.  
+  
+สิ่งที่เกิดขึ้นจริงต่างจากตอน dataset เล็ก: ที่ dataset เล็ก planner ใช้ Semi Join ตรง ๆ ทั้ง (b)/(c) แต่ที่ scale นี้ planner เปลี่ยนกลยุทธ์ — สำหรับ (b)/(c) มันเลือก dedupe customer_id ก่อน (90,147 แถว → 5,000 กลุ่ม บน column แคบ ๆ แค่ integer) แล้วค่อย join กับ customers ทีหลัง ส่วน (a) ต้อง join ก่อน (ได้ 90,147 แถวเต็ม พร้อม name+city ที่กว้างกว่า) แล้วค่อย dedupe บน column ที่กว้างกว่านั้น — นี่คือเหตุผลจริงที่ (a) ช้ากว่า ไม่ใช่แค่ "DISTINCT แพง" เฉย ๆ แต่เพราะ dedupe เกิดหลังจากที่ payload กว้างขึ้นแล้ว
