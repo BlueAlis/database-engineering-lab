@@ -27,6 +27,12 @@ Concretely, this means:
   write-up as append-only sections (`## Attempt`, `## Revision`,
   `## Experiment`) — once a section is written, never edit it; only add new
   sections below it.
+  - Exception (narrow): if the user explicitly asks for just the file
+    scaffold, the AI may create `my-work.md` containing only the next
+    empty section heading (e.g. `## Attempt`) with nothing written beneath
+    it. Never add content, placeholder text, or extra sections under that
+    heading, and never create the scaffold unprompted — the user still
+    writes every word of the actual attempt/revision/experiment/reflection.
 - Never invent benchmark numbers, execution times, or `EXPLAIN ANALYZE`
   output. If a real experiment wasn't run, say so explicitly and mark
   anything hypothetical as **theoretical / not executed**.
