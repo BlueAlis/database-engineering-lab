@@ -1,0 +1,66 @@
+Environment: dbeng-lab-postgres (postgres:16, docker), db=dbeng_lab, schema=lab_02_01
+Run date: 2026-09-11
+
+=== Happy path setup (all expected to succeed) ===
+INSERT INTO category (name) VALUES ('Cement') RETURNING id;                          -> id=1, INSERT 0 1
+INSERT INTO supplier (name) VALUES ('ACME Supply') RETURNING id;                     -> id=1, INSERT 0 1
+INSERT INTO product (product_code, name, category_id)
+  VALUES ('CEM-001', 'Portland Cement 50kg', 1) RETURNING id;                        -> id=1, INSERT 0 1
+INSERT INTO sale (sale_no, payment_method) VALUES ('S-0001', 'CASH') RETURNING id;    -> id=1, INSERT 0 1
+INSERT INTO delivery (delivery_no, supplier_id, payment_method)
+  VALUES ('D-0001', 1, 'CREDIT') RETURNING id;                                       -> id=1, INSERT 0 1
+INSERT INTO product_supplier (supplier_id, product_id, supplier_price, lead_time_days)
+  VALUES (1, 1, 120.00, 3) RETURNING id;                                             -> id=1, INSERT 0 1
+INSERT INTO sale_item (sale_id, product_id, quantity, unit_price)
+  VALUES (1, 1, 5, 150.00);                                                          -> INSERT 0 1
+INSERT INTO delivery_item (delivery_id, product_id, quantity, unit_price)
+  VALUES (1, 1, 100, 120.00);                                                        -> INSERT 0 1
+
+Result: all 8 inserts succeeded. No schema errors.
+
+=== Negative tests (each expected to fail on a specific constraint) ===
+
+A. product.status outside enum
+INSERT INTO product (product_code, name, category_id, status)
+  VALUES ('CEM-002','Bad status product',1,'DISCONTINUED');
+-> ERROR: new row for relation "product" violates check constraint "chk_product_status_match"
+   DETAIL: Failing row contains (2, CEM-002, Bad status product, 0.00, 0.00, null, 1, ..., DISCONTINUED).
+
+B. sale.status outside enum
+INSERT INTO sale (sale_no, payment_method, status)
+  VALUES ('S-0002','CASH','PENDING');
+-> ERROR: new row for relation "sale" violates check constraint "chk_sale_status_match"
+   DETAIL: Failing row contains (2, S-0002, ..., PENDING, CASH).
+
+C. sale_item.quantity = 0
+INSERT INTO sale_item (sale_id, product_id, quantity, unit_price)
+  VALUES (1,1,0,100);
+-> ERROR: new row for relation "sale_item" violates check constraint "chk_sale_item_quantity"
+   DETAIL: Failing row contains (2, 1, 1, 0.00, 100.00, ...).
+
+D. product.quantity negative
+INSERT INTO product (product_code, name, category_id, quantity)
+  VALUES ('CEM-003','Negative qty product',1,-5);
+-> ERROR: new row for relation "product" violates check constraint "chk_product_quantity"
+   DETAIL: Failing row contains (3, CEM-003, Negative qty product, -5.00, 0.00, null, 1, ...).
+
+E. product_supplier duplicate pair (supplier_id=1, product_id=1 already exists)
+INSERT INTO product_supplier (supplier_id, product_id, supplier_price)
+  VALUES (1,1,100);
+-> ERROR: duplicate key value violates unique constraint "uq_product_supplier"
+   DETAIL: Key (supplier_id, product_id)=(1, 1) already exists.
+
+F. sale_item.product_id referencing non-existent product (FK)
+INSERT INTO sale_item (sale_id, product_id, quantity, unit_price)
+  VALUES (1,999999,1,10);
+-> ERROR: insert or update on table "sale_item" violates foreign key constraint "fk_sale_item_product"
+   DETAIL: Key (product_id)=(999999) is not present in table "product".
+
+G. product_code duplicate
+INSERT INTO product (product_code, name, category_id)
+  VALUES ('CEM-001','Duplicate code product',1);
+-> ERROR: duplicate key value violates unique constraint "product_product_code_key"
+   DETAIL: Key (product_code)=(CEM-001) already exists.
+
+Result: all 7 negative cases were rejected by the exact constraint they were meant to test.
+No case passed silently and no case failed on the wrong constraint.

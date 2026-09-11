@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-09-09
+Last updated: 2026-09-11
 
 This file is a status snapshot, not a score. No percentages unless there's a
 concrete basis for the number (e.g. "9/12 exercises in this lab done").
@@ -18,6 +18,12 @@ concrete basis for the number (e.g. "9/12 exercises in this lab done").
   (`labs/01-sql/02-subqueries-and-exists-vs-in-vs-join/`). No incorrect
   final answers this lab; optional stretch (problem 1b/1c re-done against
   an `order_items` price condition) not attempted.
+- Database design — core schema, keys, and relationships (surrogate vs
+  natural PK, 1:N vs M:N via a junction table, CHECK/UNIQUE beyond `NOT
+  NULL`) — problem 1 done end-to-end: attempt, revision, and a real
+  experiment against Postgres (`labs/02-database-design/01-core-schema-keys-and-relationships/`).
+  First lab in this repo where the schema was actually deployed and tested
+  with live inserts rather than only read off the DDL.
 
 ## Labs completed
 
@@ -38,6 +44,20 @@ data and against an isolated 5,000-customer/150,000-order synthetic dataset
 the planner uniquifies before joining for IN/EXISTS but after joining for
 JOIN+DISTINCT at scale. Experiment write-up (§ Experiment in `my-work.md`)
 and `reflection.md` not yet written.
+
+`labs/02-database-design/01-core-schema-keys-and-relationships/` — attempt,
+revision, and experiment all done (`my-work.md`), reviewed (`ai-review.md`).
+Schema (8 tables, 32 constraints) deployed to a real Postgres schema
+(`lab_02_01`) and verified with live inserts: 8 happy-path rows all
+succeeded, 7 deliberately invalid inserts (bad enum values, bad quantities,
+duplicate unique pairs, an orphan FK) all failed on exactly the intended
+constraint — raw output in `evidence/constraint_tests.txt`. Experiment
+write-up in `my-work.md` is thin (one line, no per-case reflection).
+`reflection.md` written — concept/vocabulary summary (associative entity,
+candidate/alternate key, CHECK vs ENUM vs lookup table); the
+attempt/mistake/revision narrative itself already lives in `my-work.md`'s
+own "สิ่งแก้ไข" notes under Revision, so this is the right split, not a
+gap.
 
 Repo structure note: `my-attempt.md` / `my-revision.md` / `experiment.md`
 were merged into a single `my-work.md` per lab (append-only sections) on
@@ -82,6 +102,24 @@ were merged into a single `my-work.md` per lab (append-only sections) on
   self-corrected to `ROW_NUMBER()` with a deterministic tiebreaker
   (`ORDER BY total_spend DESC, c.id ASC`) once asked to reason through the
   tie scenario directly.
+- **M:N relationships need a real associative entity, not an inferred
+  path** — evidence: db-design lab 01, self-corrected to adding
+  `product_supplier` as a junction table with its own attributes
+  (`supplier_price`, `lead_time_days`) once asked what "which suppliers can
+  supply this product" would return for a product with zero delivery
+  history yet.
+- **A mutable status flag can't represent a history-bearing event** —
+  evidence: db-design lab 01, dropped `status` from `sale_item`/
+  `delivery_item` in favor of a deferred separate `sale_return` concept
+  once asked how a single-line partial return would be represented, and
+  once the parallel to this repo's own "never overwrite, append
+  corrections" rule was pointed out.
+- **CHECK constraints are a DB-level safety net independent of app
+  validation** — evidence: db-design lab 01, agreed from direct UAT
+  experience that app-only validation isn't sufficient, and then verified
+  live that `chk_product_status_match` / `chk_sale_status_match` /
+  `chk_sale_item_quantity` all actually reject bad data at the DB level
+  (`evidence/constraint_tests.txt`).
 
 ## Topics needing review
 
@@ -102,13 +140,15 @@ were merged into a single `my-work.md` per lab (append-only sections) on
 
 ## Important mistakes
 
-Three logged this session, see [notes/mistakes.md](notes/mistakes.md):
-LEFT JOIN + WHERE silently becoming INNER JOIN, GROUP BY grain mismatch +
-DISTINCT on a non-unique column, and PARTITION BY on the wrong side of a
-window function. No new formal log entries from lab 02 — the one near-miss
-(RANK() not being tie-safe, lab 02 problem 5) was self-caught during the
-attempt itself, before being written down as a wrong answer, so it's
-recorded in `ai-review.md` rather than `mistakes.md`.
+Four logged, see [notes/mistakes.md](notes/mistakes.md): LEFT JOIN + WHERE
+silently becoming INNER JOIN, GROUP BY grain mismatch + DISTINCT on a
+non-unique column, PARTITION BY on the wrong side of a window function, and
+(2026-09-11) a CHECK constraint copy-pasted from `product` onto `sale`/
+`delivery` without adjusting it to their own domain, contradicting those
+tables' own DEFAULT value — caught in review, fixed, and confirmed live. No
+new formal log entry from lab 02 (subqueries) — the one near-miss (RANK()
+not being tie-safe) was self-caught before being written down, so it's in
+`ai-review.md` rather than `mistakes.md`.
 
 ## Experiments performed
 
@@ -118,30 +158,48 @@ problems and the optional stretch in
 `labs/01-sql/02-subqueries-and-exists-vs-in-vs-join/`; outputs captured in
 `my-attempt.md` (and `evidence/` for lab 01), hand-verified against
 manually recalculated expected values. No `EXPLAIN ANALYZE`/performance
-experiments yet in either lab — both were about correctness, not
+experiments yet in either SQL lab — both were about correctness, not
 performance.
+
+`labs/02-database-design/01-core-schema-keys-and-relationships/`: full
+revised schema (8 tables, 32 constraints) deployed to a real Postgres
+schema and tested with 8 happy-path inserts (all succeeded) plus 7
+deliberately invalid inserts, one per constraint category (all failed on
+the intended constraint, none silently passed or failed on the wrong one).
+First real DDL-execution + constraint-violation experiment in this repo, as
+opposed to query-correctness testing.
 
 ## Current difficulty
 
-Junior/mid backend level, SQL fundamentals solidifying. Correctly applied
-one lab-01 lesson (LEFT JOIN + ON-vs-WHERE) unprompted in lab 02, and
-self-corrected a tie-safety window-function bug (RANK → ROW_NUMBER) once
-asked to reason through a tie scenario rather than being told the fix
-directly. Still needs prompting toward less obvious edge cases (e.g.
-initially reasoned that JOIN+DISTINCT scales better with query complexity
-than EXISTS, which is backwards) and hasn't yet run any performance
-experiment (`EXPLAIN ANALYZE`) to back up cost claims made in reviews.
+Junior/mid backend level. SQL fundamentals solidifying (lab 01); now one
+lab into database design. Correctly applied one lab-01 SQL lesson (LEFT
+JOIN + ON-vs-WHERE) unprompted in lab 02, self-corrected a tie-safety
+window-function bug (RANK → ROW_NUMBER), and in the design lab
+self-corrected twice on a single pointed question each time (missing M:N
+junction table, mutable status flag standing in for a history-bearing
+event) rather than needing the fix stated directly. Still needs prompting
+toward less obvious edge cases (e.g. initially reasoned that JOIN+DISTINCT
+scales better than EXISTS, which is backwards; initially defended a
+missing junction table with a normalization argument that was backwards)
+and hasn't yet run a performance experiment (`EXPLAIN ANALYZE`) to back up
+cost claims made in reviews.
 
 ## Recommended next step
 
-Write `reflection.md` for both `01-joins-and-aggregation` and
+Write `reflection.md` for `01-joins-and-aggregation` and
 `02-subqueries-and-exists-vs-in-vs-join` (user's own words, not
-AI-drafted) to close them out — neither has one yet. After that, remaining
-`01-sql` curriculum topics not yet covered by a lab: CTEs (including
-recursive), window functions with multiple partition/order columns,
-UNION/UNION ALL, pagination (OFFSET/LIMIT vs keyset — "why one breaks at
-scale" is an explicit curriculum target), INSERT/UPDATE/DELETE, and upsert
-(`ON CONFLICT`). A pagination lab would also be the natural place to
-finally run a real `EXPLAIN ANALYZE` experiment, since "why OFFSET
-1000000 is a problem" only actually convinces from a real plan/timing, not
-an explanation.
+AI-drafted) — neither has one yet.
+`02-database-design/01-core-schema-keys-and-relationships/reflection.md`
+is done (concept/vocabulary summary; the process narrative is already in
+`my-work.md`). That lab's `my-work.md` Experiment section is still thin
+(one line) — optional to expand, not blocking.
+
+After that: remaining `01-sql` curriculum topics not yet covered by a lab
+— CTEs (including recursive), window functions with multiple
+partition/order columns, UNION/UNION ALL, pagination (OFFSET/LIMIT vs
+keyset), INSERT/UPDATE/DELETE, and upsert (`ON CONFLICT`) — and for
+`02-database-design`, the deferred items already surfaced in lab 01:
+`product_supplier` price tiers, and `sale_return`/`delivery_return`. A
+pagination lab would also be the natural place to finally run a real
+`EXPLAIN ANALYZE` experiment, since "why OFFSET 1000000 is a problem" only
+actually convinces from a real plan/timing, not an explanation.

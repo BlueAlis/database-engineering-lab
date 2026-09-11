@@ -92,3 +92,26 @@ To rank categories within each customer, partition by the customer (`PARTITION B
 
 **Follow-up test:**
 not yet re-tested.
+
+### 2026-09-11 — CHECK constraint copy-pasted across tables without matching each table's own domain
+
+**Topic:**
+Database design — CHECK constraint values, keys and relationships lab
+
+**Original assumption:**
+Every `status` column in the schema could reuse the same enum values as `product`'s (`ACTIVE`, `INACTIVE`, `OUT`), since they're all columns named `status`.
+
+**What I did:**
+Added `CONSTRAINT chk_sale_status_match CHECK (status IN ('ACTIVE', 'INACTIVE', 'OUT'))` and the equivalent on `delivery`, copy-pasted from `product` (lab 02-database-design/01-core-schema-keys-and-relationships, first Revision draft).
+
+**What happened:**
+`sale` and `delivery` both default `status` to `'COMPLETED'`, a value that isn't in the copied enum list — so the first row ever inserted with default values would have violated its own table's CHECK constraint. Caught in review by comparing the CHECK list against the column's own DEFAULT, before running anything; fixed to `CHECK (status IN ('COMPLETED', 'INCOMPLETED'))` in the next revision and confirmed live in Postgres (`evidence/constraint_tests.txt`, test B — `sale.status = 'PENDING'` correctly rejected).
+
+**Why I was wrong:**
+`product`'s lifecycle (active/inactive/out of stock) and `sale`/`delivery`'s lifecycle (completed/not) are different domains that happen to share a column name — copying the literal allowed values assumed they shared a lifecycle when they don't.
+
+**Correct understanding:**
+Each CHECK-constrained enum column needs its valid values derived from that specific table's own business meaning (and cross-checked against that column's own DEFAULT), never copied from a same-named column on a different table.
+
+**Follow-up test:**
+confirmed live 2026-09-11, see `evidence/constraint_tests.txt` test B.
