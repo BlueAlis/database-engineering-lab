@@ -1,0 +1,50 @@
+Environment: dbeng-lab-postgres (postgres:16, docker), db=dbeng_lab, schema=lab_02_02
+Run date: 2026-09-15
+
+=== Schema deploy ===
+6 tables created with 0 errors: category, customer, salesperson, product,
+invoice, invoice_item (as designed in my-work.md Problem 2 "สรุป table").
+
+=== Seed ===
+Loaded with the exact sample data from exercise.md (3 categories,
+2 customers, 2 salespeople, 3 products, 3 invoices, 4 invoice_item rows).
+
+Sanity check: joining invoice_item -> invoice -> customer, invoice_item ->
+product -> category reconstructs the original 4-row sales_flat sample
+exactly (same invoice_no/date/customer/product/category/quantity/unit_price
+combinations as in exercise.md).
+
+=== Anomaly re-tests, against the ORIGINAL Problem 1 scenarios ===
+
+A. Update anomaly (was: updating product_category required touching every
+   row that product appeared in, e.g. CEM-001 in both INV-001 and INV-002)
+   Test: UPDATE category SET category_discount_pct = 10.00 WHERE
+   category_name = 'Cement';
+   Result: UPDATE 1 (single row changed). Every product under Cement
+   (currently just CEM-001, but would be true for any number of products)
+   now reads 10.00 via the product->category join. No risk of two rows
+   disagreeing, because there is only one row holding that fact now.
+
+B. Insert anomaly (was: couldn't add a new product without fabricating
+   customer/sale data, or blocked entirely under NOT NULL)
+   Test: INSERT INTO product (product_code, product_name, category_id,
+   unit_price) VALUES ('TOL-006', 'Screwdriver Set', <Tools category id>,
+   220.00);
+   Result: INSERT 0 1, succeeded immediately. No invoice/invoice_item row
+   needed to record that this product exists — product is its own
+   independent entity now.
+
+C. Delete anomaly (was: deleting the only line involving a given
+   salesperson/customer pair erased that salesperson's and customer's
+   only record entirely)
+   Test: DELETE FROM invoice_item WHERE invoice_no='INV-002' AND
+   product_code='CEM-001'; (the only invoice_item row involving
+   salesperson "Boat" and customer "Apex Builders")
+   Result: DELETE 1. customer.customer_name='Apex Builders' and
+   salesperson.salesperson_name='Boat' both still present afterward —
+   deleting the sale fact no longer deletes the master records, because
+   they live in their own tables independent of invoice_item.
+
+Conclusion: all 3 anomalies identified against sales_flat in Problem 1 are
+confirmed gone in the Problem 2 normalized schema, verified with live
+inserts/updates/deletes, not just by inspection of the DDL.

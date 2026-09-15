@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-09-11
+Last updated: 2026-09-15
 
 This file is a status snapshot, not a score. No percentages unless there's a
 concrete basis for the number (e.g. "9/12 exercises in this lab done").
@@ -24,6 +24,11 @@ concrete basis for the number (e.g. "9/12 exercises in this lab done").
   experiment against Postgres (`labs/02-database-design/01-core-schema-keys-and-relationships/`).
   First lab in this repo where the schema was actually deployed and tested
   with live inserts rather than only read off the DDL.
+- Database design — normalization (1NF, 2NF, 3NF), functional
+  dependencies, partial vs. transitive dependency, and denormalization as
+  a deliberate judgment call rather than an oversight — all 3 problems
+  done, schema verified live against Postgres
+  (`labs/02-database-design/02-normalization-1nf-2nf-3nf/`).
 
 ## Labs completed
 
@@ -58,6 +63,20 @@ candidate/alternate key, CHECK vs ENUM vs lookup table); the
 attempt/mistake/revision narrative itself already lives in `my-work.md`'s
 own "สิ่งแก้ไข" notes under Revision, so this is the right split, not a
 gap.
+
+`labs/02-database-design/02-normalization-1nf-2nf-3nf/` — attempt done
+(`my-work.md`, Problems 1-3), reviewed (`ai-review.md`). Took a flat
+`sales_flat` table through 1NF/2NF/3NF to a 6-table schema (`customer`,
+`product`, `category`, `salesperson`, `invoice`, `invoice_item`), then
+deployed it for real to a Postgres schema (`lab_02_02`) and re-ran all
+three Problem-1 anomaly scenarios live — all three confirmed resolved
+(`evidence/normalized_schema_test.txt`). No `## Experiment` section
+written in `my-work.md` — deliberately skipped by the user, who judged
+`ai-review.md` + the evidence file sufficient; flagged as a process
+deviation (no user-authored record of the real-run step for this lab) but
+respected as their call. `reflection.md` written (concept/vocabulary
+summary, plus a note connecting the Problem 3 denormalization question to
+materialized views/reporting tables as an alternative).
 
 Repo structure note: `my-attempt.md` / `my-revision.md` / `experiment.md`
 were merged into a single `my-work.md` per lab (append-only sections) on
@@ -120,6 +139,26 @@ were merged into a single `my-work.md` per lab (append-only sections) on
   live that `chk_product_status_match` / `chk_sale_status_match` /
   `chk_sale_item_quantity` all actually reject bad data at the DB level
   (`evidence/constraint_tests.txt`).
+- **Normalization (1NF/2NF/3NF) via functional dependencies, checked
+  against real data rather than recited from rules** — evidence:
+  db-design lab 02, every correction (wrong 2NF key, missing line-item
+  table, misplaced quantity/unit_price, 2NF/3NF conflation) was resolved
+  by testing a specific attribute against the exercise's own sample rows,
+  not by re-reading the definitions. End schema verified live in
+  Postgres: all 3 anomalies from Problem 1 confirmed gone.
+- **A column can appear in two tables without being a normalization
+  violation, if it's two different facts sharing a name** — evidence:
+  db-design lab 02, correctly reasoned that `product.unit_price`
+  (current price) and `invoice_item.unit_price` (price at time of sale)
+  are independent facts, by direct analogy to `order_items.unit_price` in
+  lab 01-sql/01-joins-and-aggregation.
+- **Denormalization decisions need a concrete read pattern, not just
+  "performance"** — evidence: db-design lab 02 Problem 3, initially cited
+  performance as a second justification for caching `product_name`,
+  then honestly retracted it once asked to name the actual query that
+  would benefit (none — `product_code` is a PK, the join is cheap),
+  keeping only the historical-snapshot argument. Correction was appended
+  as a parenthetical next to the original claim rather than deleted.
 
 ## Topics needing review
 
@@ -140,15 +179,20 @@ were merged into a single `my-work.md` per lab (append-only sections) on
 
 ## Important mistakes
 
-Four logged, see [notes/mistakes.md](notes/mistakes.md): LEFT JOIN + WHERE
+Five logged, see [notes/mistakes.md](notes/mistakes.md): LEFT JOIN + WHERE
 silently becoming INNER JOIN, GROUP BY grain mismatch + DISTINCT on a
-non-unique column, PARTITION BY on the wrong side of a window function, and
+non-unique column, PARTITION BY on the wrong side of a window function,
 (2026-09-11) a CHECK constraint copy-pasted from `product` onto `sale`/
-`delivery` without adjusting it to their own domain, contradicting those
-tables' own DEFAULT value — caught in review, fixed, and confirmed live. No
-new formal log entry from lab 02 (subqueries) — the one near-miss (RANK()
-not being tie-safe) was self-caught before being written down, so it's in
-`ai-review.md` rather than `mistakes.md`.
+`delivery` without adjusting it to their own domain, and (2026-09-15)
+repeatedly misplacing attributes relative to a composite key in
+db-design lab 02 (the actual key claimed to be single-column at first,
+then `unit_price` and separately `quantity` each wrongly assigned to only
+part of the composite key after that) — same underlying gap (not
+mechanically re-checking every attribute against the key) surfacing three
+times in one session. No new formal log entry from lab 02-sql
+(subqueries) — the one near-miss (RANK() not being tie-safe) was
+self-caught before being written down, so it's in `ai-review.md` rather
+than `mistakes.md`.
 
 ## Experiments performed
 
@@ -169,37 +213,54 @@ the intended constraint, none silently passed or failed on the wrong one).
 First real DDL-execution + constraint-violation experiment in this repo, as
 opposed to query-correctness testing.
 
+`labs/02-database-design/02-normalization-1nf-2nf-3nf/`: the final
+6-table normalized schema deployed to a real Postgres schema
+(`lab_02_02`), seeded with the exercise's own sample data (join
+reconstructs the original flat rows exactly), then each of the three
+Problem 1 anomalies re-run live against it (one-row `UPDATE` fixing every
+referencing row, an `INSERT` of a product with no sale needed, a `DELETE`
+that no longer takes out unrelated master data) — all three confirmed
+resolved.
+
 ## Current difficulty
 
-Junior/mid backend level. SQL fundamentals solidifying (lab 01); now one
-lab into database design. Correctly applied one lab-01 SQL lesson (LEFT
-JOIN + ON-vs-WHERE) unprompted in lab 02, self-corrected a tie-safety
-window-function bug (RANK → ROW_NUMBER), and in the design lab
-self-corrected twice on a single pointed question each time (missing M:N
-junction table, mutable status flag standing in for a history-bearing
-event) rather than needing the fix stated directly. Still needs prompting
-toward less obvious edge cases (e.g. initially reasoned that JOIN+DISTINCT
-scales better than EXISTS, which is backwards; initially defended a
-missing junction table with a normalization argument that was backwards)
-and hasn't yet run a performance experiment (`EXPLAIN ANALYZE`) to back up
+Junior/mid backend level. SQL fundamentals solidifying (lab 01); now two
+labs into database design. Correctly applied one lab-01 SQL lesson (LEFT
+JOIN + ON-vs-WHERE) unprompted in lab 02-sql, self-corrected a
+tie-safety window-function bug (RANK → ROW_NUMBER), and in the design labs
+self-corrected repeatedly on pointed questions (missing M:N junction
+table, mutable status flag standing in for a history-bearing event, wrong
+composite key, missing line-item table) rather than needing fixes stated
+directly — the normalization lab in particular needed the *same*
+correction pattern (check this attribute against the composite key)
+reapplied three times before it stuck, which is itself useful signal
+about where understanding is still shallow. Still needs prompting toward
+less obvious edge cases (e.g. initially reasoned that JOIN+DISTINCT scales
+better than EXISTS, which is backwards; initially defended a missing
+junction table with a normalization argument that was backwards) and
+hasn't yet run a performance experiment (`EXPLAIN ANALYZE`) to back up
 cost claims made in reviews.
 
 ## Recommended next step
 
 Write `reflection.md` for `01-joins-and-aggregation` and
 `02-subqueries-and-exists-vs-in-vs-join` (user's own words, not
-AI-drafted) — neither has one yet.
-`02-database-design/01-core-schema-keys-and-relationships/reflection.md`
-is done (concept/vocabulary summary; the process narrative is already in
-`my-work.md`). That lab's `my-work.md` Experiment section is still thin
-(one line) — optional to expand, not blocking.
+AI-drafted) — neither has one yet. Both db-design labs already have one.
+
+A quick, unprompted follow-up check on composite keys (2NF: does this
+attribute need the whole key or just part of it) would be worth doing
+before the next design lab, given it was the one thing that didn't stick
+on the first, second, or even third correction in lab 02.2 — see the
+2026-09-15 entry in `notes/mistakes.md`.
 
 After that: remaining `01-sql` curriculum topics not yet covered by a lab
 — CTEs (including recursive), window functions with multiple
 partition/order columns, UNION/UNION ALL, pagination (OFFSET/LIMIT vs
 keyset), INSERT/UPDATE/DELETE, and upsert (`ON CONFLICT`) — and for
 `02-database-design`, the deferred items already surfaced in lab 01:
-`product_supplier` price tiers, and `sale_return`/`delivery_return`. A
-pagination lab would also be the natural place to finally run a real
-`EXPLAIN ANALYZE` experiment, since "why OFFSET 1000000 is a problem" only
-actually convinces from a real plan/timing, not an explanation.
+`product_supplier` price tiers, and `sale_return`/`delivery_return`, plus
+schema evolution/migrations (the last uncovered topic in the
+`02-database-design` curriculum). A pagination lab would also be the
+natural place to finally run a real `EXPLAIN ANALYZE` experiment, since
+"why OFFSET 1000000 is a problem" only actually convinces from a real
+plan/timing, not an explanation.

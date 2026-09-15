@@ -115,3 +115,52 @@ Each CHECK-constrained enum column needs its valid values derived from that spec
 
 **Follow-up test:**
 confirmed live 2026-09-11, see `evidence/constraint_tests.txt` test B.
+
+### 2026-09-15 — Repeatedly misplacing attributes relative to a composite key
+
+**Topic:**
+Database design — 2NF, functional dependencies on a composite key
+
+**Original assumption:**
+That a table's key was a single column (`invoice_no`), and later, once
+corrected to the real composite key `(invoice_no, product_code)`, that
+which attributes needed the *whole* key vs. just *part* of it could be
+judged loosely rather than checked against actual data each time.
+
+**What I did:**
+Lab 02-database-design/02-normalization-1nf-2nf-3nf, Problem 2. Three
+separate wrong placements in sequence: (1) claimed `invoice_no` alone was
+the candidate key with no partial dependency to check; (2) after
+correcting to the composite key, wrote `unit_price` as depending on
+`invoice_no` alone; (3) after fixing that, wrote `quantity` as depending
+on `invoice_no` alone too — the same mistake recurring on a different
+column right after the first instance was fixed.
+
+**What happened:**
+Each version was written down as the "current" answer in `my-work.md`
+before being caught. Caught each time by checking against the exercise's
+own sample data: `INV-001` appears twice (once for `CEM-001`, once for
+`REB-010`) with different `quantity` values, which is only possible if
+`invoice_no` alone does not determine `quantity` — the same check that
+first exposed `invoice_no` not being a valid single-column key at all.
+
+**Why I was wrong:**
+Treated "does this column need the composite key" as something to guess
+per-attribute from intuition about what "feels like" it belongs to the
+invoice header, rather than mechanically re-checking every attribute
+against the same test each time: does this value repeat identically for
+two rows that share only part of the key? `quantity` and `unit_price`
+(historical) vary per `product_code` within the same `invoice_no`, so
+they fail that test and require the full composite key — but this had to
+be re-derived three times instead of applying the rule consistently after
+the first correction.
+
+**Correct understanding:**
+When a table has a composite key, check *every* non-key attribute against
+the same mechanical test — hold one part of the key fixed and vary the
+other; if the attribute's value changes, it depends on the varying part
+too. Don't reason attribute-by-attribute from what "seems like" it
+belongs to one entity or another.
+
+**Follow-up test:**
+not yet re-tested.
