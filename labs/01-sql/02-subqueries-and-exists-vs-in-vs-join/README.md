@@ -8,6 +8,20 @@ in `FROM` — and specifically about `EXISTS` vs `IN` vs `JOIN`: when they're
 interchangeable and when they quietly stop being equivalent (NULLs,
 duplicate rows).
 
+## Learning Objectives
+
+- Write the same query as `JOIN`+`DISTINCT`, `IN`, and `EXISTS`, and
+  explain why `DISTINCT` is needed for one and not the others.
+- Distinguish a correlated subquery (depends on the outer row) from a
+  non-correlated one, and know what breaks if the correlation is removed.
+- Explain the `NOT IN` + `NULL` trap (a single `NULL` in the subquery's
+  result poisons every outer-row comparison) and why `NOT EXISTS` is
+  immune to it.
+- Use a subquery in `FROM` (a derived table) and pick exactly one row per
+  group deterministically, even under a tie.
+- Recognize when a nested aggregate (e.g. average of a sum) needs an
+  intermediate step, since it can't be computed in a single pass.
+
 ## Scenario
 
 Same schema and data as lab 01 — the construction-material store

@@ -14,6 +14,23 @@ Taking a deliberately bad, real-looking flat table (`sales_flat`) through
 insert/update/delete anomaly it removes — then, separately, judging when
 staying denormalized is actually the right call for a given read pattern.
 
+## Learning Objectives
+
+- Identify concrete insert/update/delete anomalies caused by an
+  unnormalized table, grounded in actual sample data (not just the
+  anomaly's name).
+- Derive a table's real key — including when it's composite — by
+  checking it against sample data instead of assuming a single column.
+- Walk a table through 1NF → 2NF → 3NF, correctly telling apart a partial
+  dependency (2NF: depends on only part of a composite key) from a
+  transitive dependency (3NF: a non-key attribute determines another
+  non-key attribute).
+- Recognize when the same column name in two tables represents two
+  different facts (e.g. current price vs. price at time of sale) rather
+  than a normalization violation.
+- Justify a deliberate denormalization decision with a concrete read
+  pattern, not a generic "for performance" claim.
+
 ## Files
 
 - `exercise.md` — the problem statement (AI-authored).

@@ -13,6 +13,21 @@ primary key choice (surrogate vs natural), foreign keys and the
 relationship cardinality they express (1:N vs N:M), and constraints beyond
 `NOT NULL`.
 
+## Learning Objectives
+
+- Choose surrogate vs natural primary keys for a given table, and defend
+  the choice with a concrete reason (not "just in case").
+- Model 1:N vs M:N relationships correctly — recognize when an M:N
+  relationship needs a real associative entity, not just an inferred path
+  through an unrelated event-history table.
+- Write `CHECK`/`UNIQUE` constraints whose values actually match a
+  table's own valid domain, rather than copied from a same-named column
+  elsewhere.
+- Explain why a DB-level constraint still matters even when the app
+  already validates the same rule.
+- Recognize when a mutable status flag can't represent a history-bearing
+  event (e.g. a return), and needs a separate append-only record instead.
+
 ## Files
 
 - `exercise.md` — the problem statement (AI-authored).
