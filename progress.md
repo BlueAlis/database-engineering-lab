@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-09-15
+Last updated: 2026-09-17
 
 This file is a status snapshot, not a score. No percentages unless there's a
 concrete basis for the number (e.g. "9/12 exercises in this lab done").
@@ -159,6 +159,14 @@ were merged into a single `my-work.md` per lab (append-only sections) on
   would benefit (none — `product_code` is a PK, the join is cheap),
   keeping only the historical-snapshot argument. Correction was appended
   as a parenthetical next to the original claim rather than deleted.
+- **Composite key dependency analysis, confirmed generalized (not just
+  memorized)** — evidence: 2026-09-17 follow-up check on a fresh
+  `project_material_usage` scenario, unrelated to the sales/invoice
+  domain it was first learned on. Derived the composite key, verified it
+  against the sample data before trusting it, and classified all 7
+  attributes against it correctly on the first attempt — zero corrections
+  needed, versus three separate corrections needed on the same underlying
+  skill in db-design lab 02.
 
 ## Topics needing review
 
@@ -233,8 +241,15 @@ table, mutable status flag standing in for a history-bearing event, wrong
 composite key, missing line-item table) rather than needing fixes stated
 directly — the normalization lab in particular needed the *same*
 correction pattern (check this attribute against the composite key)
-reapplied three times before it stuck, which is itself useful signal
-about where understanding is still shallow. Still needs prompting toward
+reapplied three times before it stuck. Re-tested 2026-09-17 with a fresh,
+unrelated scenario (`project_material_usage`, not sales/invoice) and
+passed clean on the first attempt — correctly derived the composite key,
+verified it against the sample data before trusting it, classified all 7
+attributes against it with zero corrections, and independently reasoned
+through a real edge case not present in the sample (see
+`notes/mistakes.md`, 2026-09-15 entry's follow-up). Composite-key
+reasoning is confirmed solid now, not just the specific answer memorized.
+Still needs prompting toward
 less obvious edge cases (e.g. initially reasoned that JOIN+DISTINCT scales
 better than EXISTS, which is backwards; initially defended a missing
 junction table with a normalization argument that was backwards) and
@@ -247,11 +262,10 @@ Write `reflection.md` for `01-joins-and-aggregation` and
 `02-subqueries-and-exists-vs-in-vs-join` (user's own words, not
 AI-drafted) — neither has one yet. Both db-design labs already have one.
 
-A quick, unprompted follow-up check on composite keys (2NF: does this
-attribute need the whole key or just part of it) would be worth doing
-before the next design lab, given it was the one thing that didn't stick
-on the first, second, or even third correction in lab 02.2 — see the
-2026-09-15 entry in `notes/mistakes.md`.
+Composite-key follow-up check done 2026-09-17 and passed — no longer
+blocking. Next design lab: **schema evolution / migrations**, the last
+uncovered topic in the `02-database-design` curriculum, and closer to
+the user's stated DevOps interest than the other remaining design topics.
 
 After that: remaining `01-sql` curriculum topics not yet covered by a lab
 — CTEs (including recursive), window functions with multiple

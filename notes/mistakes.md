@@ -163,4 +163,16 @@ too. Don't reason attribute-by-attribute from what "seems like" it
 belongs to one entity or another.
 
 **Follow-up test:**
-not yet re-tested.
+2026-09-17, passed clean on the first attempt. Given a fresh
+`project_material_usage` scenario (different domain, not sales/invoice)
+with a candidate key of `(project_id, material_code)`: correctly
+classified all 7 remaining attributes against the key with zero
+corrections needed, including two that require the full composite key
+(`quantity_used`, `usage_date`). Also independently reasoned that the
+key itself needed verifying against the sample data before answering,
+and correctly identified a real edge case not present in the sample data
+(same project logging the same material twice in one day) as the actual
+business question that would decide whether a third key column or a
+surrogate log id is needed — applying the same
+sample-data-first-then-business-rule reasoning that fixed the original
+mistake, unprompted.
